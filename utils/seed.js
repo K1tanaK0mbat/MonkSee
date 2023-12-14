@@ -5,8 +5,8 @@ const seedData = require('./data');
 connection.on('error', (err) => err);
 
 connection.once('open', async () => {
+    let userMap = {};
     try {
-        await connection.open();
         console.log('Database connected');
 
 
