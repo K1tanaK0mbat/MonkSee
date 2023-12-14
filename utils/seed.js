@@ -1,7 +1,6 @@
 const connection = require('../config/connection');
-const User = require('../models/User');
-const Thought = require('../models/Thought');
-
+const {User, Thought} = require('../models');
+const seedData = require('./data');
 
 connection.on('error', (err) => err);
 
@@ -16,17 +15,28 @@ connection.once('open', async () => {
         console.log('Existing data cleared');
 
         const insertedUsers = await User.insertMany(seedData.users);
-        console.log('Users inserted:', insertedUsers.length);
+        insertedUsers.forEach(user => {
+            userMap[user.username] = user._id;
+        });
 
+        const thoughtsData = seedData.thoughts.map(thought => ({
+            ...thought,
+            userId: userMap[thought.username]
+        }));
+        await Thought.insertMany(thoughtsData);
 
-        console.table(students);
-        console.info('Seeding complete! 🌱');
+   
+        for (const username in seedData.friends) {
+            const user = await User.findOne({ username });
+            const friendIds = seedData.friends[username].map(friendUsername => userMap[friendUsername]);
+            user.friends = friendIds;
+            await user.save();
+        }
+
+        console.log('Seeding complete! 🌱');
         process.exit(0);
     } catch (error) {
         console.error('Error:', error);
         process.exit(1);
     }
 });
-
-
-
